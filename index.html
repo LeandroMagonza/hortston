@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HortSton</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #070a0f; color: #eee; font-family: system-ui, "Segoe UI", sans-serif; user-select: none; }
+      #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+      kbd { background: #2c3644; border-radius: 4px; padding: 1px 6px; font-family: inherit; border: 1px solid #4a5666; }
+      button { font: inherit; color: inherit; cursor: pointer; }
+      select, input { font: inherit; color: #e4e9f0; background: #0e141c; border: 1px solid #3a4452; border-radius: 6px; padding: 5px 8px; }
+
+      /* ─── menú de inicio ─── */
+      .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 10; background: radial-gradient(ellipse at center, rgba(16, 28, 40, 0.94), rgba(6, 10, 16, 0.98)); overflow-y: auto; padding: 24px; box-sizing: border-box; }
+      .overlay[hidden] { display: none; }
+      #menu h1 { margin: 0; font-size: 52px; letter-spacing: 6px; color: #ffd66b; text-shadow: 0 3px 0 #7a4b12, 0 0 30px rgba(255, 214, 107, 0.25); text-align: center; }
+      #menu h1 small { display: block; font-size: 14px; letter-spacing: 5px; color: #cfd6e0; text-shadow: none; font-weight: 400; margin-top: 6px; }
+      .modes { display: flex; gap: 12px; }
+      .mode { padding: 10px 22px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.05); font-size: 16px; font-weight: 700; color: #cfd6e0; transition: transform 0.12s; }
+      .mode:hover { transform: translateY(-2px); }
+      .mode.on { border-color: #ffd66b; color: #ffd66b; box-shadow: 0 0 16px rgba(255, 214, 107, 0.45); background: rgba(255, 214, 107, 0.08); }
+      .sides { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; justify-content: center; }
+      .side { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+      .side .who { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #9aa4b2; }
+      .side .who.p0 { color: #3fd2b5; }
+      .side .who.p1 { color: #ff9a52; }
+      .decks { display: flex; gap: 12px; }
+      .deck { --c: #5a6680; position: relative; width: 180px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px 12px; border-radius: 14px; border: 3px solid rgba(255, 255, 255, 0.14); background: rgba(10, 16, 24, 0.95); text-align: center; transition: transform 0.12s, box-shadow 0.12s; }
+      .decks[data-side="0"] .deck { --c: #3fd2b5; }
+      .decks[data-side="1"] .deck { --c: #ff9a52; }
+      .deck:hover { transform: translateY(-6px) scale(1.03); }
+      .deck.on { border-color: var(--c); box-shadow: 0 0 22px var(--c); }
+      .ico { width: 1.15em; height: 1.15em; vertical-align: -0.22em; fill: currentColor; }
+      .deck .art { font-size: 50px; line-height: 1.1; color: #f4ead2; }
+      .deck .art .ico { width: 1em; height: 1em; vertical-align: 0; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
+      .deck .name { font-size: 21px; font-weight: 800; color: #fff; }
+      .deck .blurb { font-size: 12.5px; line-height: 1.4; color: #cfd6e0; }
+      .vs { font-size: 26px; font-weight: 800; color: #ffd66b; text-shadow: 0 2px 0 #7a4b12; }
+      .heroes { --c: #5a6680; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: 372px; }
+      .heroes[data-side="0"] { --c: #3fd2b5; }
+      .heroes[data-side="1"] { --c: #ff9a52; }
+      .hero { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 2px; border-radius: 9px; border: 2px solid rgba(255, 255, 255, 0.12); background: rgba(10, 16, 24, 0.9); transition: transform 0.1s; }
+      .hero:hover { transform: translateY(-2px); }
+      .hero.on { border-color: var(--c); box-shadow: 0 0 12px var(--c); }
+      .hero .art { font-size: 20px; line-height: 1.2; color: #f4ead2; }
+      .hero .art .ico { width: 1em; height: 1em; vertical-align: 0; }
+      .herodesc i .ico { color: #f4ead2; }
+      .hero .name { font-size: 9.5px; line-height: 1.15; color: #cfd6e0; text-align: center; }
+      .herodesc { width: 372px; min-height: 48px; font-size: 12px; line-height: 1.4; color: #cfd6e0; }
+      .herodesc b { color: #ffd66b; }
+      .herodesc span { color: #9aa4b2; }
+      details.testing { width: min(560px, 92vw); border: 1px solid #3a4452; border-radius: 10px; background: rgba(10, 16, 24, 0.85); padding: 6px 14px; }
+      details.testing summary { cursor: pointer; padding: 6px 0; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #9aa4b2; }
+      details.testing .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; padding: 8px 0 12px; }
+      details.testing label { display: grid; gap: 3px; min-width: 0; font-size: 12px; color: #9aa4b2; }
+      details.testing select, details.testing input { width: 100%; min-width: 0; box-sizing: border-box; text-overflow: ellipsis; }
+      .buttons { display: flex; gap: 14px; align-items: center; }
+      .go { font-size: 20px; padding: 12px 38px; border-radius: 10px; border: 0; background: #5be07a; color: #102; font-weight: 800; letter-spacing: 2px; box-shadow: 0 4px 0 #2a8a43; transition: transform 0.1s; }
+      .go:hover { transform: translateY(-2px); }
+      .go:active { transform: translateY(2px); box-shadow: 0 2px 0 #2a8a43; }
+      .go.alt { background: #e4e9f0; box-shadow: 0 4px 0 #8a94a3; }
+      .go[hidden] { display: none; }
+      .link { background: transparent; border: 0; color: #9aa4b2; font-size: 14px; text-decoration: underline; }
+      .link:hover { color: #ffd66b; }
+
+      /* ─── final ─── */
+      #end { background: rgba(6, 10, 16, 0.78); }
+      #end .title { font-size: 64px; font-weight: 900; letter-spacing: 4px; color: #ffd66b; text-shadow: 0 4px 0 #7a4b12, 0 0 40px rgba(255, 214, 107, 0.4); animation: endtitle 0.6s cubic-bezier(.2, 1.4, .4, 1); }
+      #end .title.p0 { color: #3fd2b5; text-shadow: 0 4px 0 #0f5a4c, 0 0 40px rgba(63, 210, 181, 0.4); }
+      #end .title.p1 { color: #ff9a52; text-shadow: 0 4px 0 #7a3a10, 0 0 40px rgba(255, 154, 82, 0.4); }
+      #end .sub { font-size: 16px; color: #cfd6e0; animation: endfade 0.5s 0.3s both; }
+      #endscores { display: flex; gap: 22px; align-items: center; animation: endfade 0.5s 0.5s both; }
+      .score { min-width: 170px; padding: 16px 18px; border-radius: 14px; border: 3px solid var(--c); box-shadow: 0 0 22px var(--c); background: rgba(10, 16, 24, 0.95); text-align: center; }
+      .score.p0 { --c: #3fd2b5; }
+      .score.p1 { --c: #ff9a52; }
+      .score .who { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: var(--c); }
+      .score .life { font-size: 40px; font-weight: 900; color: #fff; }
+      .score .hit { font-size: 13px; color: #9aa4b2; }
+      #end .buttons { animation: endfade 0.5s 0.8s both; }
+      @keyframes endtitle { from { opacity: 0; transform: scale(2.4); } to { opacity: 1; transform: none; } }
+      @keyframes endfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+      /* ─── historial ─── */
+      #logbox { position: fixed; top: 12px; right: 12px; bottom: 12px; width: 350px; display: flex; flex-direction: column; z-index: 20; background: rgba(10, 16, 24, 0.96); border: 1px solid #3a4452; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
+      #logbox[hidden] { display: none; }
+      #logbox .head { display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid #3a4452; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #ffd66b; font-weight: 700; }
+      #logbox .head button { margin-left: auto; background: transparent; border: 0; font-size: 16px; color: #9aa4b2; }
+      #log { flex: 1; overflow-y: auto; padding: 4px 12px 12px; font-size: 12.5px; color: #c4c9d4; user-select: text; }
+      #log .p0 { color: #3fd2b5; }
+      #log .p1 { color: #ff9a52; }
+      #log .t { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.035); border: 1px solid #262e3b; }
+      #log .th { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
+      #log .tn { color: #ffd66b; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+      #log .plays { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+      #log .play { display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 8px; border: 1.5px solid currentColor; background: rgba(0, 0, 0, 0.25); }
+      #log .plays > div { display: grid; gap: 4px; align-content: start; }
+      #log .play.nothing { opacity: 0.6; font-size: 11.5px; }
+      #log .play .art { font-size: 22px; color: #f4ead2; }
+      #log .play .art .ico { width: 1em; height: 1em; vertical-align: 0; }
+      #log .play b { color: #f1ede4; }
+      #log .play i { display: block; font-style: normal; color: #cfd6e0; font-size: 11.5px; }
+      #log .play small { display: block; font-size: 10px; opacity: 0.8; }
+      #log .atk { margin: 3px 0; }
+      #log .atk summary { cursor: pointer; list-style: none; padding: 3px 4px; border-radius: 6px; }
+      #log .atk summary::-webkit-details-marker { display: none; }
+      #log .atk summary:hover { background: rgba(255, 255, 255, 0.05); }
+      #log .atk .fate { font-size: 11.5px; color: #aab2c0; padding-left: 10px; }
+      #log .atk .steps { padding: 2px 4px 4px 14px; font-size: 11px; color: #8f98a8; }
+      #log .dead { color: #ff6b6b; }
+      #log .none { color: #6f7887; font-style: italic; }
+      #log .pw { margin: 3px 0; padding: 3px 4px; color: #cdb8ff; }
+      #log .board { margin-top: 5px; padding-top: 5px; border-top: 1px dashed #343a4b; font-size: 11.5px; color: #9aa4b2; }
+      #log .end { border-color: #ffd66b; }
+
+      /* ─── reglas ─── */
+      dialog { background: #111923; color: #e4e9f0; border: 2px solid #3a4452; border-radius: 14px; max-width: min(760px, 94vw); max-height: 88vh; padding: 0; }
+      dialog::backdrop { background: rgba(0, 0, 0, 0.65); }
+      dialog .head { position: sticky; top: 0; display: flex; align-items: center; padding: 12px 18px; background: #111923; border-bottom: 1px solid #3a4452; }
+      dialog .head h2 { margin: 0; font-size: 20px; color: #ffd66b; letter-spacing: 2px; }
+      dialog .head button { margin-left: auto; background: #e4e9f0; color: #102; border: 0; border-radius: 8px; padding: 6px 14px; font-weight: 700; }
+      dialog .body { padding: 6px 20px 18px; font-size: 14.5px; line-height: 1.5; }
+      dialog h3 { margin: 16px 0 4px; font-size: 15px; color: #ffd66b; }
+      dialog p, dialog li { color: #cfd6e0; }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <div id="menu" class="overlay">
+      <h1>HORTSTON<small>UN JUEGO DE CARTAS SIN AZAR</small></h1>
+      <div class="modes">
+        <button class="mode" data-mode="ai">🤖 Contra la IA</button>
+        <button class="mode" data-mode="human">👥 Dos jugadores</button>
+      </div>
+      <div class="sides">
+        <div class="side"><div class="who p0" id="who0">Vos · abajo</div><div class="decks" id="decks0" data-side="0"></div><div class="heroes" id="heroes0" data-side="0"></div><div class="herodesc" id="herodesc0"></div></div>
+        <div class="vs">VS</div>
+        <div class="side"><div class="who p1" id="who1">IA · arriba</div><div class="decks" id="decks1" data-side="1"></div><div class="heroes" id="heroes1" data-side="1"></div><div class="herodesc" id="herodesc1"></div></div>
+      </div>
+      <details class="testing">
+        <summary>Reglas en prueba</summary>
+        <div class="grid">
+          <label>Las cartas
+            <select id="cards">
+              <option value="hand">Mano y maná, con descarte</option>
+              <option value="turn">Solo las 3 del turno, una por turno</option>
+            </select>
+          </label>
+          <label>Elección de carta
+            <select id="pickMode">
+              <option value="simultaneous">Simultánea: los dos a la vez, a ciegas</option>
+              <option value="sequential">Secuencial: el atacante elige y el defensor responde</option>
+            </select>
+          </label>
+          <label>Ataques por turno (del que ataca)
+            <select id="maxAttacks">
+              <option value="0">Todas sus unidades</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+            </select>
+          </label>
+          <label>La carta que entra
+            <select id="summonSick">
+              <option value="yes">Ataca recién el turno siguiente (salvo Carga)</option>
+              <option value="no">Puede atacar ese mismo turno</option>
+            </select>
+          </label>
+          <label>Ataca en los turnos impares
+            <select id="firstAttacker">
+              <option value="0">J1 (abajo)</option>
+              <option value="1">J2 (arriba)</option>
+            </select>
+          </label>
+          <label>Quién resuelve primero sus efectos (si ninguna es Rápida)
+            <select id="firstToResolve">
+              <option value="attacker">El atacante</option>
+              <option value="defender">El defensor</option>
+              <option value="lowerLife">El que tiene menos vida</option>
+            </select>
+          </label>
+          <label>El golpe que rompe el escudo (cartas viejas)
+            <select id="shieldBreak">
+              <option value="absorb">Se pierde (no entra)</option>
+              <option value="full">Entra entero</option>
+              <option value="mitigated">Entra lo que pasa del escudo</option>
+            </select>
+          </label>
+          <label>Escudo roto (cartas viejas)
+            <select id="shieldRenews">
+              <option value="no">Solo lo recuperan algunas cartas</option>
+              <option value="yes">Todas lo recuperan al empezar cada turno</option>
+            </select>
+          </label>
+          <label>La vida
+            <select id="scoring">
+              <option value="hero">Atacando al héroe, como en Hearthstone (hasta 0)</option>
+              <option value="face">Las que no atacan le pegan solas a la vida (hasta 0)</option>
+              <option value="difference">Cada turno, el de menos mesa pierde la diferencia</option>
+              <option value="final">Solo al final: cada carta viva pega su nivel</option>
+            </select>
+          </label>
+          <label>Lo que pega una carta a la vida
+            <select id="faceValue">
+              <option value="attack">Su daño</option>
+              <option value="rank">Su nivel (el número dorado)</option>
+            </select>
+          </label>
+          <label>Rondas sin cartas después del T9 (solo con «al final»)
+            <select id="extraRounds">
+              <option value="0">0: termina en el T9</option>
+              <option value="1">1: el T10 es solo combate</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+          <label>El poder del héroe
+            <select id="powerMode">
+              <option value="mana">Cuesta 1 de maná (el de las cartas), una vez por ataque</option>
+              <option value="fixed">Energía aparte: cuesta 2, las veces que te alcance</option>
+              <option value="all">Energía aparte: gasta toda y crece con ella</option>
+              <option value="off">Sin poder (para comparar los mazos y las cartas de clase)</option>
+            </select>
+          </label>
+          <label>Curación menor del Sacerdote (X: 2, o la energía que gasta)
+            <select id="priestHeal">
+              <option value="plus1">Cura X+1</option>
+              <option value="double">Cura 2X (como en Hearthstone)</option>
+              <option value="x">Cura X</option>
+            </select>
+          </label>
+          <label>Vida inicial <input id="startingLife" type="number" min="1" max="99" /></label>
+        </div>
+      </details>
+      <div class="buttons">
+        <button class="go" id="play">JUGAR</button>
+        <button class="go alt" id="resume" hidden>SEGUIR</button>
+      </div>
+      <button class="link" id="howto">Cómo se juega</button>
+    </div>
+
+    <div id="end" class="overlay" hidden>
+      <div class="title" id="endtitle"></div>
+      <div class="sub" id="endsub"></div>
+      <div id="endscores"></div>
+      <div class="buttons">
+        <button class="go" id="rematch">REVANCHA</button>
+        <button class="go alt" id="endlog">HISTORIAL</button>
+        <button class="go alt" id="tomenu">MENÚ</button>
+      </div>
+    </div>
+
+    <div id="logbox" hidden>
+      <div class="head">Historial de la partida <button id="closelog" title="Cerrar (H)">✕</button></div>
+      <div id="log"></div>
+    </div>
+
+    <dialog id="rules">
+      <div class="head"><h2>CÓMO SE JUEGA</h2><button data-close>Cerrar</button></div>
+      <div class="body">
+        <h3>La idea</h3>
+        <p>Sin azar. En cada turno (del 1 al 9) te llegan a la mano siempre las mismas 3 cartas: 2 de tu mazo y 1 de la clase de tu héroe. Tenés tanto <b>maná</b> como el número del turno y jugás las cartas que quieras de tu mano mientras sumen hasta eso (cada carta cuesta su turno, el número dorado de abajo): en el turno 5, la del 5, o una del 2 y una del 3 que guardaste. Apenas te llegan, <b>descartás una de las 3</b> en secreto: el rival sabe qué te llegó, pero no con cuáles te quedaste. El juego es saber qué puede tener el otro, elegir cuándo jugar cada carta y hacer el trade que más te conviene. (En «Reglas en prueba» está la regla de antes: una de las 3 del turno, sin mano.)</p>
+        <h3>Un turno</h3>
+        <ol>
+          <li><b>Descarte:</b> te llegan las 3 cartas del turno y descartás una, en secreto. Las otras quedan en tu mano, también para las rondas después del turno 9.</li>
+          <li><b>Elección:</b> cada uno elige qué juega de su mano (las que sumen hasta el maná, o nada), los dos a la vez y sin ver lo del otro, y <b>dónde va cada unidad en su fila</b> (tocás la carta, pasás el mouse por tu fila y hacés click; o ← → y Enter). Tocarla otra vez la saca. Después, <b>JUGAR</b> (o <kbd>Espacio</kbd>). (En «Reglas en prueba» se puede pasar a secuencial: el que ataca elige a la vista y el que defiende responde.)</li>
+          <li><b>Resolución:</b> entran todas las cartas y después se resuelven los efectos («Al invocar» y hechizos): primero los del que ataca (o los de quien juegue algo <b>Rápido</b>), en el orden en que los elegiste. Así tu efecto le puede apuntar a una carta que acaba de jugar el otro. Si pide un objetivo, lo elegís en ese momento.</li>
+          <li><b>Combate:</b> solo ataca el atacante del turno, con cada una de sus cartas: tocás una tuya y después a quién ataca, <b>una enemiga o el héroe rival</b> (su retrato, arriba al medio). 💤 La que acaba de entrar ataca recién el turno siguiente, salvo que tenga <b>Carga</b>. Atacar es opcional.</li>
+        </ol>
+        <p>Uno ataca en los turnos impares y el otro en los pares. <b>Vida:</b> como en Hearthstone, una carta que ataca al héroe rival le pega su daño a la vida, y el héroe no devuelve el golpe; si el rival tiene un <b>Guardián</b>, hay que sacarlo primero. O sea: cada carta elige entre cambiar o ir a la cara. Gana el que deja al otro en 0. Después del T9 no hay más cartas y se sigue peleando; desde la ronda 10, cansancio: los dos pierden 1, después 2, 3… (En «Reglas en prueba» están la regla de antes, en que las que no atacan le pegan solas a la vida, «cada turno, el de menos mesa pierde la diferencia», pegar con el nivel en vez del daño, y la regla vieja: solo al final.)</p>
+        <h3>Héroes</h3>
+        <p>Cada uno elige un mazo (Salvajes o Pradera: solo unidades) y un <b>héroe</b> (los de Hearthstone, menos el Brujo: su poder roba cartas y acá no hay mazo para robar). El héroe tiene un <b>poder</b> y <b>nueve cartas de clase</b>, una por turno; los hechizos son todos de clase.</p>
+        <ul>
+          <li><b>El poder:</b> cuesta <b>1 de maná</b>, el mismo de las cartas, y se usa <b>una vez en tu turno de ataque</b>, con lo que no gastaste en cartas: o jugás la carta del turno, o una más chica y el poder. Hace siempre lo mismo: abajo, X es 1, los números de Hearthstone (más lo que sumen cartas como el Aprendiz). Las cartas de energía (la Rata, el Perro, la Dríade…) te dan maná de más para tu turno siguiente. Está a la derecha de tu fila: tocalo (o <kbd>P</kbd>) y, si apunta, tocá el objetivo (una carta o el retrato de un héroe). En «Reglas en prueba» están las reglas de antes, con energía aparte que se junta 1 por turno: cuesta 2 (X = 2), o gasta toda y X es lo que gastaste.</li>
+          <li><b>Poderes:</b> 🔥 Mago, X de daño a una enemiga o al rival · 🎯 Cazador, el rival pierde X+1 (aunque tenga Guardián) · ✨ Sacerdote, +X+1 de vida a una tuya o a vos (en el panel: 2X o X) · 🛡️ Guerrero, ganás X+1 de vida · 📯 Paladín, un Recluta X/X · 🗡️ Pícaro, tu héroe le pega X+1 a una enemiga y recibe su daño · 🗿 Chamán, el próximo tótem (en ronda) con X de vida · 🐾 Druida, ganás X de vida y le pegás X−1 (al menos 1) a una enemiga o al rival · 💥 Cazador de demonios, una tuya gana +X de daño hasta el fin del turno · 🧟 Caballero de la muerte, un Necrófago X/1 con Carga que muere al terminar el turno.</li>
+          <li><b>Cartas de clase:</b> te llega una en cada turno, con las dos del mazo. Juegan con la mecánica de la clase: Congelar y <b>Poder +N</b> del Mago, bestias del Cazador, curar del Sacerdote, enojarse del Guerrero, Escudo y Reclutas del Paladín, Sigilo y cuchillos del Pícaro, tótems y auras del Chamán, energía del Druida, las puntas de la fila del Cazador de demonios, muertes y Aguante del Caballero de la muerte.</li>
+          <li><b>Palabras nuevas:</b> <b>Congelada</b> (no ataca ni le pega a la vida en el próximo combate de su dueño), <b>Robo de vida</b> (el daño que hace te cura), <b>Embestida</b> (ataca unidades el turno en que entra, pero ese turno no al héroe), <b>Sigilo</b> (no se la puede atacar ni elegir hasta que ataca, a una unidad o al héroe), <b>Mientras esté viva</b> (las de sus costados tienen un bonus mientras está viva: matá a la del medio y lo pierden).</li>
+        </ul>
+        <h3>La carta</h3>
+        <p>Arriba a la izquierda, ⚔️ el <b>ataque</b>; arriba a la derecha, ❤ la <b>vida</b>. En cada pelea los dos se pegan a la vez, así que el que ataca también recibe. El daño queda. Algunas cartas tienen además 🔱 <b>lanza</b> (pega antes que todo: si mata, el otro no llega a pegar) o 🔪 <b>cuchillo</b> (pega al final, solo si la carta sigue viva). Como en Hearthstone, en el turno N una carta sin efectos reparte 2N+1 entre ataque y vida; las que tienen efecto pagan con números.</p>
+        <p><b>Efectos:</b> <b>Al invocar</b> (cuando entra), <b>Último aliento</b> (cuando muere), <b>Fin del turno</b> (al terminar cada turno, haya peleado o no), <b>Al recibir daño</b> (cada vez que la lastiman y sobrevive), <b>Guardián</b> (hay que atacarlo primero), <b>Carga</b> (ataca el turno en que entra), <b>Veneno</b> (si le hace daño a una unidad peleando, la mata), 🛡 <b>Escudo 1</b> (el primer golpe se pierde; frena también el Veneno), <b>Silenciar</b> (le saca los efectos). <b>+1/+1</b> es +1 de daño y +1 de vida. Por posición: <b>las de los costados</b> son las dos de al lado; <b>las de tu izquierda</b> y <b>las de tu derecha</b>, todas las de ese lado. Los <b>hechizos</b> hacen su efecto y se van: no quedan para el golpe final.</p>
+        <h3>Las cartas del primer prototipo</h3>
+        <p>Manada y Muralla (fuera del menú) tienen además arco, triángulo de armas, escudo, armadura y habilidades:</p>
+        <ul>
+          <li><b>Izquierda:</b> las armas en el orden en que pegan: 🏹 arco, 🔱 lanza, la principal (⚔️ ataque simple, 🗡️ espada, 🪓 hacha o 🔨 maza) y 🔪 cuchillo. Cada una con su daño; si no la tiene, queda el hueco.</li>
+          <li><b>Derecha:</b> ❤ vida, escudo, armadura y energía (si ataca más de una vez).</li>
+          <li><b>Abajo:</b> las habilidades, una por renglón: «Palabra clave: efecto». Las que van solas (Guardián, Rápido, Aguante) ya dicen todo. Al medio, chico, el turno de la carta, que es también lo que pega al final si sigue viva.</li>
+        </ul>
+        <h3>Una pelea</h3>
+        <p>🏹 <b>Con arco:</b> el arco es para atacar. Una carta con arco ataca solo con el arco, de lejos, y solo le responde otro arquero (se disparan a la vez). Sus otras armas son para defenderse cuerpo a cuerpo.</p>
+        <p><b>Cuerpo a cuerpo</b>, por fases:</p>
+        <ol>
+          <li>🔱 <b>Lanzas</b>, las dos a la vez.</li>
+          <li><b>Arma principal:</b> el ⚔️ ataque simple pega a la vez que el otro. En el triángulo, espada le gana a hacha, hacha a maza y maza a espada: el que gana pega primero; con la misma arma, a la vez.</li>
+          <li>🔪 <b>Cuchillos</b>, los dos a la vez.</li>
+        </ol>
+        <p>Cada arma es un golpe aparte. El que muere ya no pega en lo que sigue. Por eso pegar primero solo importa si ese golpe mata.</p>
+        <p><b>Escudo N:</b> frena los golpes menores que N; uno de N o más lo rompe, y ese golpe se pierde. Escudo 1 se rompe con el primer golpe. No vuelve solo: algunas cartas lo recuperan. <b>Armadura N:</b> le resta N a cada golpe. El daño queda: no se cura solo. <b>Curar</b> es ganar vida: no tiene tope, puede pasar de la que tenía la carta.</p>
+        <p>Por eso se cruzan: la armadura aguanta muchos golpes chicos y pierde contra uno grande; el escudo aguanta uno grande y pierde contra dos seguidos (uno lo rompe, otro mata).</p>
+        <h3>Palabras clave</h3>
+        <ul>
+          <li><b>Guardián:</b> hay que atacarlo antes que a las demás. <b>Energía N:</b> N ataques por turno.</li>
+          <li><b>Aguante:</b> la primera vez que moriría, queda en 1 de vida y sigue, con todo lo que tenía. Con efecto («Aguante: …»), además hace eso.</li>
+          <li><b>Último aliento:</b> efecto al morir, de cualquier forma. <b>Caer en combate:</b> efecto solo si muere peleando. <b>Desterrar</b> la saca sin que muera (no dispara ninguno de los dos).</li>
+          <li><b>Silencio</b> quita texto (habilidades, Guardián, evolución). Los números quedan.</li>
+          <li><b>Rápido:</b> se resuelve antes que la carta del rival, pero entonces no puede apuntarle a la que el rival juega ese turno.</li>
+        </ul>
+        <h3>Créditos</h3>
+        <p>Los dibujos son de <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, de Lorc, Delapouite, Caro Asercion, Cathelineau, DarkZaitzev, Sbed, Skoll y Sparker, con licencia <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>.</p>
+        <h3>Controles</h3>
+        <p>Mouse para todo; pasá el mouse por una carta para verla en grande. <kbd>1</kbd> a <kbd>9</kbd> eligen carta de la mano, <kbd>←</kbd> <kbd>→</kbd> mueven dónde va, <kbd>P</kbd> usa el poder del héroe, <kbd>S</kbd> cambia el sonido (todo, sin música, nada), <kbd>Espacio</kbd> juega lo que elegiste o termina el turno, <kbd>Z</kbd> deshace, <kbd>M</kbd> muestra los mazos, <kbd>H</kbd> el historial de la partida, <kbd>Esc</kbd> suelta la selección o abre el menú.</p>
+      </div>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "hortston-web",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "sim": "tsx tools/sim.ts",
+    "matriz": "tsx tools/matriz.ts",
+    "heroes": "tsx tools/heroes.ts",
+    "arte": "tsx tools/arte.ts",
+    "iconos": "tsx tools/iconos.ts",
+    "balance": "tsx tools/balance.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.20.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}
